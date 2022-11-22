@@ -50,7 +50,7 @@ module.exports = function (db) {
       const total = await field.countDocuments(params)
       const totalPage = Math.ceil(total / limit)
 
-      const read = await field.find(params).limit(limit).skip(offset).toArray()
+      const read = await field.find(params).limit(limit).skip(offset).sort({[sortBy]: sortMode}).toArray()
       res.json({ result: read, page: page, totalPage: totalPage, offset, sortBy: sortBy, sortMode: sortMode})
     } catch (err) {
       res.json({ err })

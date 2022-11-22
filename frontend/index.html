@@ -129,17 +129,9 @@
           <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
         </form>
       </div>
-      <table class="table table-sortable" id="myTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>String</th>
-            <th>Integer</th>
-            <th>Float</th>
-            <th>Date</th>
-            <th>Boolean</th>
-            <th>Action</th>
-      </tr>
+      <table class="table table-sortable">
+        <thead id="user-sort">
+
         </thead>
 
         <tbody id="user-table">
@@ -190,13 +182,20 @@
       return false
     }
 
+    const changeSort = (sortBy, sortMode) => {
+      console.log(sortBy,sortMode);
+      params = { ...params, sortBy, sortMode }
+      readData(params)
+      return false
+    }
+
 
 
     const readData = (params) => {
       fetch(`http://localhost:3000/users?${new URLSearchParams(params).toString()}`)
         .then((response) => response.json())
         .then(({ result, page, totalPage, offset, sortBy, sortMode }) => {
-          params = { page, totalPage, sortBy, sortMode }
+          params = { ...params, page, totalPage, offset, sortBy, sortMode }
           let isi = ''
           result.forEach((item, index) => {
             isi += `<tr>
@@ -211,7 +210,7 @@
                         </td>
                         <td>
                             ${item.float}
-                        </td>
+                        </td>   
                         <td>
                             ${moment(item.date).format('DD MMMM YYYY')}
                         </td>
@@ -228,6 +227,8 @@
           });
           document.getElementById('user-table').innerHTML = isi
           pagination(params)
+          sorting(params)
+
         }).catch((error) => {
           console.error('Error:', error);
         });
@@ -235,19 +236,62 @@
 
 
     const pagination = (params) => {
-      let pagination = `<li class="page-item  ${params.page == 1 ? 'disabled' : ''}">
-                <a class="page-link" href="javascript:void(0)" onclick="changePage(${params.page - 1})">Previous</a>
-              </li>`
+
+      let pagination = `
+      <li class="page-item  ${params.page == 1 ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" onclick="changePage(${params.page - 1})">Previous</a>
+      </li>`
 
       for (let i = 1; i <= params.totalPage; i++) {
-        pagination = pagination + `<li class="page-item  ${i == params.page ? 'active' : ''}">
-                  <a class="page-link" href="javascript:void(0)" onclick="changePage(${i})">${i}</a>
-                </li>`
+        pagination += `
+        <li class="page-item  ${i == params.page ? 'active' : ''}">
+          <a class="page-link" href="javascript:void(0)" onclick="changePage(${i})">${i}</a>
+        </li>`
       }
-      pagination = pagination + `<li class="page-item ${params.page == params.totalPage ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" onclick="changePage(${params.page + 1})">Next</a>
-                  </li>`
+      pagination += `
+      <li class="page-item ${params.page == params.totalPage ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" onclick="changePage(${params.page + 1})">Next</a>
+      </li>`
       document.getElementById('pagi').innerHTML = pagination
+
+    }
+
+
+    const sorting = (params) => {
+      let sort = `
+            <th>
+            ID
+            </th>`
+      sort += `
+          <th>
+            <a href="javascript:void(0)" onclick="changeSort('string','${params.sortMode == 'asc' ? sortMode = 'desc' : sortMode = 'asc'}')">
+              <i class="fa-solid fa-${params.sortBy == 'string' ? params.sortMode == 'asc' ? 'sort-up' : 'sort-down' : 'sort'}"></i> String
+            </a> 
+          </th>`
+      sort += `
+            <th>  
+            <a href="javascript:void(0)" onclick="changeSort('integer','${params.sortMode == 'asc' ? sortMode = 'desc' : sortMode = 'asc'}')">
+              <i class="fa-solid fa-${params.sortBy == 'integer' ? params.sortMode == 'asc' ? 'sort-up' : 'sort-down' : 'sort'}"></i> Integer
+            </a> 
+            </th>`
+      sort += `
+          <th>  
+            <a href="javascript:void(0)" onclick="changeSort('float','${params.sortMode == 'asc' ? sortMode = 'desc' : sortMode = 'asc'}')">
+              <i class="fa-solid fa-${params.sortBy == 'float' ? params.sortMode == 'asc' ? 'sort-up' : 'sort-down' : 'sort'}"></i> Float
+            </a> 
+          </th>`
+      sort += `
+          <th>  
+            <a href="javascript:void(0)" onclick="changeSort('date','${params.sortMode == 'asc' ? sortMode = 'desc' : sortMode = 'asc'}')">
+              <i class="fa-solid fa-${params.sortBy == 'date' ? params.sortMode == 'asc' ? 'sort-up' : 'sort-down' : 'sort'}"></i> Date
+            </a> 
+          </th>`
+      sort += `
+            <th>Boolean</th>`
+      sort += `
+            <th>Action</th>`
+
+      document.getElementById('user-sort').innerHTML = sort
     }
 
 
@@ -314,54 +358,7 @@
           console.error('Error:', error);
         });
     }
-
-    let th = document.getElementsByTagName('th');
-
-    for (let j = 0; j < th.length; j++) {
-      th[j].addEventListener('click', item(j))
-    }
-
-    function item(j) {
-      return function() {
-        sortTable(j)
-      }      
-    }
-
-    function sortTable(j) {
-      var table, rows, switching, i, x, y, shouldSwitch;
-      table = document.getElementById("myTable");
-      switching = true;
-      /*Make a loop that will continue until
-      no switching has been done:*/
-      while (switching) {
-        //start by saying: no switching is done:
-        switching = false;
-        rows = table.rows;
-        /*Loop through all table rows (except the
-        first, which contains table headers):*/
-        for (i = 1; i < (rows.length - 1); i++) {
-          //start by saying there should be no switching:
-          shouldSwitch = false;
-          /*Get the two elements you want to compare,
-          one from current row and one from the next:*/
-          x = rows[i].getElementsByTagName("td")[j];
-          y = rows[i + 1].getElementsByTagName("td")[j];
-          //check if the two rows should switch place:
-          if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-            //if so, mark as a switch and break the loop:
-            shouldSwitch = true;
-            break;
-          }
-        }
-        if (shouldSwitch) {
-          /*If a switch has been marked, make the switch
-          and mark that a switch has been done:*/
-          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-          switching = true;
-        }
-      }
-    }
-
+  
     readData()
   </script>
 </body>
